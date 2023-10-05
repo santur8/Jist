@@ -13,4 +13,3 @@ class AbstractIO(ABC):
     @abstractmethod
     def send(self, summary: str) -> Result[T, str]:
         pass
-

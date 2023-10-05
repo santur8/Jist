@@ -8,11 +8,18 @@ T = TypeVar("T")
 
 
 class App:
-    def __init__(self, io: AbstractIO, summarizer: AbstractSummarizer) -> None:
-        self.io = io
+    def __init__(
+        self,
+        input_io: AbstractIO,
+        summarizer: AbstractSummarizer,
+        output_io: AbstractIO,
+    ) -> None:
+        self.input_io = input_io
+        self.output_io = output_io
         self.summarizer = summarizer
 
     def summarize(self) -> Result[T, str]:
         # TODO: should I use inheritance here?
-        return self.io.send(self.summarizer.summarize(self.io.get_history()))
-
+        return self.output_io.send(
+            self.summarizer.summarize(self.input_io.get_history())
+        )
