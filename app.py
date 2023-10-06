@@ -18,8 +18,7 @@ class App:
         self.output_io = output_io
         self.summarizer = summarizer
 
-    def summarize(self) -> Result[T, str]:
-        # TODO: should I use inheritance here?
+    def execute(self) -> Result[T, str]:
         return self.output_io.send(
             self.summarizer.summarize(self.input_io.get_history())
         )

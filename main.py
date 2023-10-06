@@ -7,9 +7,18 @@ from app import App
 with open("discord_token", "r") as f:
     token = f.read()
 
+with open("channel_id", "r") as f:
+    channel_id = int(f.read())
+
 def main():
-    dummy_app = App(DiscordIO(token, history_limit=3), IdentitySummarizer(), DummyIO())
-    print(dummy_app.summarize())
+    discord_app = App(
+        DiscordIO(token, history_limit=2),
+        IdentitySummarizer(),
+        # DummyIO()
+        DiscordIO(token, send_to=channel_id),
+    )
+    print(discord_app.execute())
+
 
 if __name__ == "__main__":
     main()
