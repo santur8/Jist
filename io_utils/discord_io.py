@@ -34,6 +34,7 @@ class DiscordIO(AbstractIO):
                     history.setdefault(guild.name, dict())[channel.name] = [
                         (message.author.name, message.content) async for message in channel.history(limit=self.history_limit)
                     ]
+                    history[guild.name][channel.name].reverse()  # the history is fetched in reverse order, thus reverse back to make it normal
             await bot.close()
 
         bot.run(self.token)
