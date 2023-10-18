@@ -23,7 +23,6 @@ class DiscordIO(AbstractIO):
 
     def get_history(self) -> str:
         # https://discordpy.readthedocs.io/en/stable/ext/commands/api.html#discord.ext.commands.Context.history
-        # TODO: also include guild information
         bot = discord.Client(intents=self.intents)
 
         history: Dict[str, Dict[str, List[Tuple[str, str]]]] = {}
