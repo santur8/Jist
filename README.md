@@ -25,4 +25,6 @@ Currently you'll have to change the source code in `main.py`, or write your own 
   - [ ] [LangChain](https://github.com/GoogleCloudPlatform/generative-ai/blob/main/language/use-cases/document-summarization/summarization_large_documents_langchain.ipynb) summarizer
   - [ ] Local inference
     - [ ] [finetuned Flan-T5 Base](https://huggingface.co/philschmid/flan-t5-base-samsum)
+      - [x] Call model
+      - [ ] Optimize inference result (maybe introduce formatter?)
 
