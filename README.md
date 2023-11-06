@@ -17,8 +17,10 @@ Currently you'll have to change the source code in `main.py`, or write your own 
 - [ ] Make a general purpose `main.py` that takes application descriptions stored in (maybe) toml/json config files, and build applications using them.
 - [ ] Introduce testing framework.
 - [ ] Add logging support for the whole program.
+- [ ] Build more intelligent tokenizers
 - [ ] Add more platforms
-  - [ ] (Optional) Investigate the possibility of using discord application and [OAuth2](https://discord.com/developers/docs/topics/oauth2) to read messages instead of bots
+  - [ ] Slack
+  - [ ] Telegram
   - [ ] Composite inputs & outputs (may require heavy refactor)
 - [ ] Add more summarizers
   - [x] [GPT](https://platform.openai.com/docs/api-reference/chat) summarizer
