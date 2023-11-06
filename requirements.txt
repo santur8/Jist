@@ -1,3 +1,5 @@
 result
 discord.py
 openai
+transformers[torch]
+
