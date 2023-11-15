@@ -15,11 +15,13 @@ class DiscordIO(AbstractIO):
         self,
         token: str,
         history_limit=100,
+        source_channel: str = None,
         send_to: Optional[int] = None,
     ) -> None:
         self.history_limit = history_limit
         self.send_to = send_to
         self.token = token
+        self.source_channel = source_channel
 
     def get_history(self) -> str:
         # https://discordpy.readthedocs.io/en/stable/ext/commands/api.html#discord.ext.commands.Context.history
@@ -31,6 +33,9 @@ class DiscordIO(AbstractIO):
         async def on_ready():
             for guild in bot.guilds:
                 for channel in guild.text_channels:
+                    if self.source_channel != None and channel.name != self.source_channel:
+                        # if source channel defined, ignore all others
+                        continue
                     history.setdefault(guild.name, dict())[channel.name] = [
                         (message.author.name, message.content) async for message in channel.history(limit=self.history_limit)
                     ]
@@ -38,7 +43,8 @@ class DiscordIO(AbstractIO):
             await bot.close()
 
         bot.run(self.token)
-        return f"```\n{pformat(history)}\n```"
+        return history
+        #return f"```\n{pformat(history)}\n```" # return hist dict instead of formatting as str
 
     def send(self, summary: str) -> Result[discord.Message, str]:
         res = Err("Failed to even enter the match closure")
