@@ -4,6 +4,7 @@ from io_utils.text_file_io import TextFileIO
 from summarizer.identity_summarizer import IdentitySummarizer
 from summarizer.chatgpt_summarizer import ChatGPTSummarizer
 from summarizer.flan_t5_base_samsum_summarizer import FlanT5BaseSamsumSummarizer
+from summarizer.gpt_MR_summarizer import GPTMRSummarizer
 
 from app import App
 
@@ -20,10 +21,12 @@ with open("openai_api_key", "r") as f:
 def main():
     discord_app = App(
         # DiscordIO(token, history_limit=10),
-        TextFileIO("data/discord_history.txt"),
+        DiscordIO(token, history_limit=20, src_channel_name='general'),
+        # TextFileIO("data/discord_history.txt"),
         # IdentitySummarizer(),
+        GPTMRSummarizer(api_key, 4),
         # ChatGPTSummarizer(api_key),
-        FlanT5BaseSamsumSummarizer(),
+        # FlanT5BaseSamsumSummarizer(),
         DummyIO()
         # DiscordIO(token, send_to=channel_id),
     )
