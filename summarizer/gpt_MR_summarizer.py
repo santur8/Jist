@@ -1,11 +1,11 @@
 from summarizer.abstract_summarizer import AbstractSummarizer
-import openai
+from openai import OpenAI
 import concurrent.futures
-
+from datetime import datetime
 
 class GPTMRSummarizer(AbstractSummarizer):
     def __init__(self, api_key: str, map_count: int) -> None:
-        openai.api_key = api_key
+        self.client = OpenAI(api_key=api_key)
         self.map_count = map_count
 
     def summarize(self, history: str, split: str = 'count') -> str:
@@ -81,7 +81,7 @@ class GPTMRSummarizer(AbstractSummarizer):
 
         # create concurrent threads to execute
         with concurrent.futures.ThreadPoolExecutor() as tp:
-            future_prompt = {tp.submit(self.thread_summarize, chat_lists[i]): i for i in range(len(chat_lists)) }
+            future_prompt = {tp.submit(self.thread_summarize, chat_lists[i], i): i for i in range(len(chat_lists)) }
         
         # wait for all threads to complete
         for future in concurrent.futures.as_completed(future_prompt):
@@ -94,37 +94,19 @@ class GPTMRSummarizer(AbstractSummarizer):
 
         return summaries
 
-    def thread_summarize(self, chat_segment: list) -> str:
+    def thread_summarize(self, chat_segment: list, idx: int) -> str:
         '''
         Summarize a single chat segment
         '''
-        return 'pass'
-        prompt = 'Summarize the key points and highlights from the chat logs'
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+        prompt = 'Summarize the key points and highlights from the chat logs into a single sentence'
+        print(str(idx) + ' thread starting ' + str(datetime.now()))
+        completion = self.client.chat.completions.create(
+            model='gpt-3.5-turbo',
             messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": chat_segment}
+                {'role': 'system', 'content': prompt},
+                {'role': 'user', 'content': str(chat_segment)}
             ]
         )
+        print(str(idx) + ' thread finished ' + str(datetime.now()))
         return completion.choices[0].message.content
 
-
-
-    # def summarize(self, history: str) -> str:
-    #     completion = openai.ChatCompletion.create(
-    #         model="gpt-3.5-turbo",
-    #         messages=[
-    #             {"role": "system", "content": "You are an assistant that summarizes chat historys to help user grasp recent news in an online chat room."},
-    #             {"role": "user", "content": history}
-    #         ]
-    #     )
-    #     return completion.choices[0].message.content
-
-'''
-response = openai.Completion.create(
-            model="gpt-3.5-turbo",
-            prompt=prompt,
-            max_tokens=50
-        )
-'''
