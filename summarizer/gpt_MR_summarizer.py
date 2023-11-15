@@ -22,7 +22,7 @@ class GPTMRSummarizer(AbstractSummarizer):
             print()
 
 
-        return None
+        return ""
     
     def parse_history(self, history: str, split: str) -> list:
         '''

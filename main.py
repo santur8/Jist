@@ -21,7 +21,7 @@ with open("openai_api_key", "r") as f:
 def main():
     discord_app = App(
         # DiscordIO(token, history_limit=10),
-        DiscordIO(token, history_limit=20, source_channel='general'),
+        DiscordIO(token, history_limit=20, src_channel_name='general'),
         # TextFileIO("data/discord_history.txt"),
         # IdentitySummarizer(),
         GPTMRSummarizer(api_key, 4),
