@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class AbstractSummarizer(ABC):
+class StrSummarizer(ABC):
     @abstractmethod
     def summarize(self, history: str) -> str:
         pass

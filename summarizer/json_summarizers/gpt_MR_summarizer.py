@@ -1,5 +1,5 @@
 from typing import Literal
-from summarizer.tree_summarizer import JsonSummarizer, Json
+from .json_summarizer import JsonSummarizer, Json
 from openai import OpenAI
 import concurrent.futures
 from datetime import datetime

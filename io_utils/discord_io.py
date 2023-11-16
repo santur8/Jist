@@ -26,7 +26,7 @@ class DiscordIO(AbstractIO):
         # https://discordpy.readthedocs.io/en/stable/ext/commands/api.html#discord.ext.commands.Context.history
         bot = discord.Client(intents=self.intents)
 
-        history: Dict[str, Dict[str, List[Tuple[str, str]]]] = {}
+        history: Dict[str, Dict[str, List[str]]] = {}
 
         @bot.event
         async def on_ready():
@@ -36,7 +36,7 @@ class DiscordIO(AbstractIO):
                         # if source channel defined, ignore all others
                         continue
                     history.setdefault(guild.name, dict())[channel.name] = [
-                        (message.author.name, message.content) async for message in channel.history(limit=self.history_limit)
+                        "%s: %s" % (message.author.name, message.content) async for message in channel.history(limit=self.history_limit)
                     ]
                     history[guild.name][channel.name].reverse()  # the history is fetched in reverse order, thus reverse back to make it normal
             await bot.close()

@@ -1,9 +1,9 @@
 from typing import Iterable
-from summarizer.abstract_summarizer import AbstractSummarizer
+from .str_summarizer import StrSummarizer
 from transformers import pipeline
 
 
-class FlanT5BaseSamsumSummarizer(AbstractSummarizer):
+class FlanT5BaseSamsumSummarizer(StrSummarizer):
     def __init__(self, block_size: int = 500, hop_size: int = 450) -> None:
         self.pipe = pipeline("text2text-generation", model="philschmid/flan-t5-base-samsum")
         self.block_size = block_size;

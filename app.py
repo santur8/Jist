@@ -1,7 +1,7 @@
 from typing import TypeVar
 from result import Result
 from io_utils.abstract_io import AbstractIO
-from summarizer.tree_summarizer import JsonSummarizer
+from summarizer.json_summarizers.json_summarizer import JsonSummarizer
 
 
 T = TypeVar("T")
