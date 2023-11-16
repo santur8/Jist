@@ -4,9 +4,10 @@ import concurrent.futures
 from datetime import datetime
 
 class GPTMRSummarizer(AbstractSummarizer):
-    def __init__(self, api_key: str, map_count: int) -> None:
+    def __init__(self, api_key: str, map_count: int, sum_reduce: bool = False) -> None:
         self.client = OpenAI(api_key=api_key)
         self.map_count = map_count
+        self.sum_reduce = sum_reduce
 
     def summarize(self, history: str, split: str = 'count') -> str:
         '''
@@ -17,12 +18,12 @@ class GPTMRSummarizer(AbstractSummarizer):
 
         chat_lists = self.parse_history(history, split)
         map_results = self.map_summarize(chat_lists)
-        for res in map_results:
-            print(res)
-            print()
 
-
-        return ""
+        if self.sum_reduce:
+            return self.reduce(map_results)
+        else:
+            # return map results as single string?
+            return ''
     
     def parse_history(self, history: str, split: str) -> list:
         '''
@@ -90,7 +91,7 @@ class GPTMRSummarizer(AbstractSummarizer):
                 summary = future.result()
                 summaries[thread_index] = summary
             except Exception as e:
-                print(f"Error for index {thread_index}: {e}")
+                print(f'Error for index {thread_index}: {e}')
 
         return summaries
 
@@ -108,5 +109,20 @@ class GPTMRSummarizer(AbstractSummarizer):
             ]
         )
         print(str(idx) + ' thread finished ' + str(datetime.now()))
+        return completion.choices[0].message.content
+
+    def reduce(self, map_results: list) -> str:
+        '''
+        Given results from parallel map summaries, collate into single result
+        '''
+        prompt = 'Summarize the key points and highlights from these chat log summaries into a single paragraph'
+
+        completion = self.client.chat.completions.create(
+            model='gpt-3.5-turbo',
+            messages=[
+                {'role': 'system', 'content': prompt},
+                {'role': 'user', 'content': str(map_results)}
+            ]
+        )
         return completion.choices[0].message.content
 
