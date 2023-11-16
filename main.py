@@ -19,15 +19,15 @@ with open("./secrets/channel_id", "r") as f:
 with open("./secrets/openai_api_key", "r") as f:
     api_key = f.read().strip()
 
-tg_secrets = json.load(open("./secrets/tg_secrets.json", "r"))
+#tg_secrets = json.load(open("./secrets/tg_secrets.json", "r"))
 
 def main():
     discord_app = App(
         # DiscordIO(token, history_limit=10),
-        DiscordIO(token, history_limit=30, src_channel_name='general'),
+        DiscordIO(token, history_limit=1000, src_channel_name='general'),
         # TextFileIO("data/discord_history.txt"),
-        # GPTMRSummarizer(api_key, 3, True),
-        TreeSummarizer(IdentitySummarizer()),
+        GPTMRSummarizer(api_key, 2, True),
+        # TreeSummarizer(IdentitySummarizer()),
         # TreeSummarizer(ChatGPTSummarizer(api_key)),
         #ChatGPTSummarizer(api_key),
         # FlanT5BaseSamsumSummarizer(),
