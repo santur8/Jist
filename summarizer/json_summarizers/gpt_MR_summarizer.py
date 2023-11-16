@@ -2,13 +2,17 @@ from typing import Literal
 from .json_summarizer import JsonSummarizer, Json
 from openai import OpenAI
 import concurrent.futures
+import tiktoken
 from datetime import datetime
+
+TOKEN_LIMIT = 4096-50  # token limit for GPT 3.5 Turbo, minus some room for prompt
 
 class GPTMRSummarizer(JsonSummarizer):
     def __init__(self, api_key: str, map_count: int, sum_reduce: bool = False) -> None:
         self.client = OpenAI(api_key=api_key)
         self.map_count = map_count
         self.sum_reduce = sum_reduce
+        self.encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
     def summarize(self, history: Json, split: Literal["count"] | Literal["token"] = 'count') -> str:
         '''
@@ -17,7 +21,14 @@ class GPTMRSummarizer(JsonSummarizer):
         Reduce collates results and (optionally) combines with a final summarization
         '''
 
-        chat_lists = self.parse_history(history, split)
+        #chat_lists = self.parse_history(history, split)
+        chat_lists = self.parse_history(history, 'token')
+        for item in chat_lists:
+            print(item)
+            print(len(self.encoding.encode(item)))
+            print()
+
+        print(len(chat_lists))
         map_results = self.map_summarize(chat_lists)
 
         if self.sum_reduce:
@@ -26,7 +37,7 @@ class GPTMRSummarizer(JsonSummarizer):
             # return map results as single string?
             return ''
     
-    def parse_history(self, history: Json, split: Literal["count"] | Literal["token"]) -> list:
+    def parse_history(self, history: Json, split: Literal['count'] | Literal['token']) -> list:
         '''
         Split list of comments into equal portions for parallel summarization
         '''
@@ -71,8 +82,38 @@ class GPTMRSummarizer(JsonSummarizer):
 
         elif split == 'token':
             # TODO perform split based on token count
-            pass
+            chat_list = []
+            start = 0
+
+            chunk_size = TOKEN_LIMIT
+            chunk = ''
+
+            for message in messages:
+                token_count = len(self.encoding.encode(message + ', '))
+                
+                if token_count < chunk_size:
+                    # append to current chunk
+                    chunk += message
+                    chunk += ', '
+                    chunk_size -= token_count
+                else:
+                    # current chunk of maximum size
+                    # append current chunk to list
+                    chat_list.append(chunk)
+                    print(chunk)
+                    chunk = ''
+                    chunk_size = TOKEN_LIMIT
+                    
+                    # start new chunk
+                    chunk += message
+                    chunk += ', '
+                    chunk_size -= token_count
+            
+            # final append for last chunk
+            chat_list.append(chunk)
+            return chat_list
         
+        # should never hit this
         return []
     
     def map_summarize(self, chat_lists: list) -> list:

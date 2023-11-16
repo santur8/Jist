@@ -3,3 +3,4 @@ discord.py
 openai
 transformers[torch]
 telethon
+tiktoken
