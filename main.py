@@ -19,8 +19,13 @@ tg_secrets = json.load(open("./secrets/tg_secrets.json", "r"))
 
 def main():
     discord_app = App(
-        DiscordIO(token, history_limit=20, src_channel_name='general'),
-        GPTMRSummarizer(api_key, 4),
+        # DiscordIO(token, history_limit=10),
+        DiscordIO(token, history_limit=30, src_channel_name='general'),
+        # TextFileIO("data/discord_history.txt"),
+        # IdentitySummarizer(),
+        GPTMRSummarizer(api_key, 3, True),
+        #ChatGPTSummarizer(api_key),
+        # FlanT5BaseSamsumSummarizer(),
         DummyIO()
     )
     print(discord_app.execute())
