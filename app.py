@@ -1,7 +1,7 @@
 from typing import TypeVar
 from result import Result
 from io_utils.abstract_io import AbstractIO
-from summarizer.abstract_summarizer import AbstractSummarizer
+from summarizer.tree_summarizer import JsonSummarizer
 
 
 T = TypeVar("T")
@@ -11,7 +11,7 @@ class App:
     def __init__(
         self,
         input_io: AbstractIO,
-        summarizer: AbstractSummarizer,
+        summarizer: JsonSummarizer,
         output_io: AbstractIO,
     ) -> None:
         self.input_io = input_io
