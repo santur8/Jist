@@ -1,10 +1,9 @@
 from typing import Optional, Dict, List, Tuple
 from discord.abc import PrivateChannel
 from result import Result, Ok, Err
-from io_utils.abstract_io import AbstractIO
+from io_utils.abstract_io import AbstractIO, Json
 import discord
 from discord import CategoryChannel, ForumChannel
-from pprint import pformat
 
 
 class DiscordIO(AbstractIO):
@@ -23,7 +22,7 @@ class DiscordIO(AbstractIO):
         self.token = token
         self.src_channel_name = src_channel_name
 
-    def get_history(self) -> str:
+    def get_history(self) -> Json:
         # https://discordpy.readthedocs.io/en/stable/ext/commands/api.html#discord.ext.commands.Context.history
         bot = discord.Client(intents=self.intents)
 
@@ -44,7 +43,6 @@ class DiscordIO(AbstractIO):
 
         bot.run(self.token)
         return history
-        #return f"```\n{pformat(history)}\n```" # return hist dict instead of formatting as str
 
     def send(self, summary: str) -> Result[discord.Message, str]:
         res = Err("Failed to even enter the match closure")
