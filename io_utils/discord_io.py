@@ -1,4 +1,4 @@
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List
 from discord.abc import PrivateChannel
 from result import Result, Ok, Err
 from io_utils.abstract_io import AbstractIO, Json
