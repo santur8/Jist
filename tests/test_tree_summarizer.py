@@ -1,6 +1,5 @@
-from summarizer.tree_summarizer import TreeSummarizer
-from summarizer.identity_summarizer import IdentitySummarizer
-from io_utils.dummy_io import DummyIO
+from summarizer.json_summarizers.tree_summarizer import TreeSummarizer
+from summarizer.str_summarizers.identity_summarizer import IdentitySummarizer
 
 
 def test_simple_json():
