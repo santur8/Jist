@@ -2,4 +2,4 @@ result
 discord.py
 openai
 transformers[torch]
-
+telethon
