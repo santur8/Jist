@@ -50,19 +50,17 @@ class GPTMRSummarizer(JsonSummarizer):
             
             # divvy up messages
             for i in range(self.map_count):
-                chats = []
-
                 # calc size of list
                 list_size = avg + 1 if i < rem else avg
 
                 # get slice of chat messages
                 chunk = messages[start:start + list_size]
-                for tup in chunk:
-                    # cat user (tup[0]) and message (tup[1]) together
-                    msg = tup[0] + ': ' + tup[1]
-                    chats.append(msg)
+                # for tup in chunk:
+                #     # cat user (tup[0]) and message (tup[1]) together
+                #     msg = tup[0] + ': ' + tup[1]
+                #     chats.append(msg)
 
-                chat_lists.append(chats)
+                chat_lists.append(chunk)
 
                 # increment starting position
                 start += list_size
