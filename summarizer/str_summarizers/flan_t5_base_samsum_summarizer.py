@@ -4,7 +4,7 @@ from transformers import pipeline
 
 
 class FlanT5BaseSamsumSummarizer(StrSummarizer):
-    def __init__(self, block_size: int = 500, hop_size: int = 450) -> None:
+    def __init__(self, block_size: int = 500, hop_size: int = 400) -> None:
         self.pipe = pipeline("text2text-generation", model="philschmid/flan-t5-base-samsum")
         self.block_size = block_size;
         self.hop_size = hop_size;
@@ -14,7 +14,5 @@ class FlanT5BaseSamsumSummarizer(StrSummarizer):
             yield history[i: i + self.block_size]
 
     def summarize(self, history: str) -> str:
-        for token in self.tokenize(history):
-            print(self.pipe(token))
-        return ""
+        return "\n".join(self.pipe(token)[0]["generated_text"] for token in self.tokenize(history))
 

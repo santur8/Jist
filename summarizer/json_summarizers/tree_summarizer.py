@@ -4,6 +4,7 @@ from .list_summarizer import ListSummarizer, JoinListSummarizer
 from typing import Dict
 import asyncio
 from functools import partial
+import json
 
 
 class TreeSummarizer(JsonSummarizer):
@@ -27,6 +28,11 @@ class TreeSummarizer(JsonSummarizer):
                 case str():
                     subtree_sum[k] = self.str_summarizer.summarize(v)
         return self.str_summarizer.summarize("\n".join("%s:\n%s" % (k, v) for k, v in subtree_sum.items()))
+
+
+class IdentityTreeSummarizer(JsonSummarizer):
+    def summarize(self, history: Json) -> str:
+        return json.dumps(history)
 
 
 class AsyncTreeSummarizer(JsonSummarizer):

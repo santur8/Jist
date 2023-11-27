@@ -14,8 +14,10 @@ Currently you'll have to change the source code in `main.py`, or write your own 
 
 ## Todo
 
+<details>
+
 - [ ] Make a general purpose `main.py` that takes application descriptions stored in (maybe) toml/json config files, and build applications using them.
-- [ ] Introduce testing framework.
+- [x] Introduce testing framework.
 - [ ] Add logging support for the whole program.
 - [ ] Build more intelligent tokenizers
 - [ ] Add more platforms
@@ -30,3 +32,4 @@ Currently you'll have to change the source code in `main.py`, or write your own 
       - [x] Call model
       - [ ] Optimize inference result (maybe introduce formatter?)
 
+</details>

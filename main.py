@@ -1,7 +1,9 @@
 from io_utils.discord_io import DiscordIO
 from io_utils.dummy_io import DummyIO
+from io_utils.text_file_io import TextFileIO
 from summarizer.json_summarizers.gpt_MR_summarizer import GPTMRSummarizer
-from summarizer.json_summarizers.tree_summarizer import TreeSummarizer
+from summarizer.json_summarizers.list_summarizer import ChunkListSummarizer
+from summarizer.json_summarizers.tree_summarizer import TreeSummarizer, IdentityTreeSummarizer
 from summarizer.str_summarizers.identity_summarizer import IdentitySummarizer
 from summarizer.str_summarizers.chatgpt_summarizer import ChatGPTSummarizer
 from summarizer.str_summarizers.flan_t5_base_samsum_summarizer import FlanT5BaseSamsumSummarizer
@@ -22,15 +24,17 @@ with open("./secrets/openai_api_key", "r") as f:
 #tg_secrets = json.load(open("./secrets/tg_secrets.json", "r"))
 
 def main():
+    json_summarizer = FlanT5BaseSamsumSummarizer()
     discord_app = App(
         # DiscordIO(token, history_limit=10),
-        DiscordIO(token, history_limit=1000, src_channel_name='general'),
-        # TextFileIO("data/discord_history.txt"),
-        GPTMRSummarizer(api_key, 2, True),
+        # DiscordIO(token, history_limit=1000, src_channel_name='general'),
+        TextFileIO("data/discord_history.txt"),
+        # IdentityTreeSummarizer(),
+        # GPTMRSummarizer(api_key, 2, True),
         # TreeSummarizer(IdentitySummarizer()),
         # TreeSummarizer(ChatGPTSummarizer(api_key)),
-        #ChatGPTSummarizer(api_key),
-        # FlanT5BaseSamsumSummarizer(),
+        # ChatGPTSummarizer(api_key),
+        TreeSummarizer(json_summarizer, ChunkListSummarizer(json_summarizer, 400)),
         DummyIO()
     )
     print(discord_app.execute())

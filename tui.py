@@ -36,7 +36,7 @@ class SummarizerTUIApp(App[None]):
     def __init__(self):
         super().__init__()
         self.platforms: List[Tuple[str, AbstractIO]] = [
-            ("Discord", DiscordIO(token, history_limit=30, src_channel_name="general")),
+            ("Discord", DiscordIO(token, history_limit=30, src_channel_name="simulation")),
             ("Instagram", InstagramIO()),
             ("Telegram", TelegramIO(tg_secrets["api_id"], tg_secrets["api_hash"])),
             ("Text File", TextFileIO("data/discord_history.txt")),

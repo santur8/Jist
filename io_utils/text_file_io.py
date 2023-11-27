@@ -1,5 +1,6 @@
 from result import Ok, Result, Err
 from io_utils.abstract_io import AbstractIO, Json
+import json
 
 
 class TextFileIO(AbstractIO):
@@ -8,7 +9,7 @@ class TextFileIO(AbstractIO):
 
     def get_history(self) -> Json:
         with open(self.filename, "r") as f:
-            return {self.filename: f.read()}
+            return json.load(f)
 
     def send(self, summary: str) -> Result[int, str]:
         try:
