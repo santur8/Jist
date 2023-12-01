@@ -1,53 +1,108 @@
 import json
-from typing import Callable, List, Any, Dict, TypeVar
+from typing import Callable, List, Any, Dict, Literal, TypeVar
 
-import openai
 from app import App
-from io_utils.discord_io import DiscordIO
-from io_utils.telegram_io import TelegramIO
-from io_utils.text_file_io import TextFileIO
-from io_utils.dummy_io import DummyIO
-from summarizer.json_summarizers.gpt_MR_summarizer import GPTMRSummarizer
-from summarizer.str_summarizers.chatgpt_summarizer import ChatGPTSummarizer
-from summarizer.str_summarizers.flan_t5_base_samsum_summarizer import (
-    FlanT5BaseSamsumSummarizer,
-)
-from summarizer.json_summarizers.tree_summarizer import TreeSummarizer
-from summarizer.json_summarizers.json_summarizer import JsonSummarizer, Json
-from summarizer.str_summarizers.identity_summarizer import IdentitySummarizer
 from io_utils.abstract_io import AbstractIO
+from summarizer.json_summarizers.json_summarizer import JsonSummarizer, Json
+
+
+def lazy_build_discord_io(**kwargs) -> AbstractIO:
+    from io_utils.discord_io import DiscordIO
+
+    return DiscordIO(**kwargs)
+
+
+def lazy_build_telegram_io(**kwargs) -> AbstractIO:
+    from io_utils.telegram_io import TelegramIO
+
+    return TelegramIO(**kwargs)
+
+
+def lazy_build_text_file_io(**kwargs) -> AbstractIO:
+    from io_utils.text_file_io import TextFileIO
+
+    return TextFileIO(**kwargs)
+
+
+def lazy_build_dummy_io(**kwargs) -> AbstractIO:
+    from io_utils.dummy_io import DummyIO
+
+    return DummyIO()
 
 
 class IOFactory:
-    @staticmethod
-    def new(io: str, **kwargs) -> AbstractIO:
-        match io:
-            case "Discord":
-                return DiscordIO(**kwargs)
-            case "Telegram":
-                return TelegramIO(**kwargs)
-            case "Text File":
-                return TextFileIO(**kwargs)
-            case "Dummy":
-                return DummyIO()
-            case _:
-                raise ValueError("not supported type of io")
+    IOKeys = Literal["Discord", "Telegram", "Text File", "Dummy"]
+
+    MAP: Dict[IOKeys, Callable[..., AbstractIO]] = {
+        "Discord": lazy_build_discord_io,
+        "Telegram": lazy_build_telegram_io,
+        "Text File": lazy_build_text_file_io,
+        "Dummy": lazy_build_dummy_io,
+    }
+
+    @classmethod
+    def new(cls, io: IOKeys, **kwargs) -> AbstractIO:
+        if io in cls.MAP:
+            return cls.MAP[io](**kwargs)
+        raise ValueError(
+            "%s is not supported. Please use one of the following io: %s"
+            % (io, ", ".join(cls.MAP.keys()))
+        )
+
+
+def lazy_build_chatgpt_recursive(**kwargs) -> JsonSummarizer:
+    from summarizer.json_summarizers.tree_summarizer import TreeSummarizer
+    from summarizer.str_summarizers.chatgpt_summarizer import ChatGPTSummarizer
+
+    return TreeSummarizer(ChatGPTSummarizer(**kwargs))
+
+
+def lazy_build_chatgpt_mapreduce(**kwargs) -> JsonSummarizer:
+    from summarizer.json_summarizers.gpt_MR_summarizer import GPTMRSummarizer
+
+    return GPTMRSummarizer(**kwargs)
+
+
+def lazy_build_identity(**kwargs) -> JsonSummarizer:
+    from summarizer.json_summarizers.tree_summarizer import TreeSummarizer
+    from summarizer.str_summarizers.identity_summarizer import IdentitySummarizer
+
+    return TreeSummarizer(IdentitySummarizer())
+
+
+def lazy_build_flan_t5_base_samsum(**kwargs) -> JsonSummarizer:
+    from summarizer.json_summarizers.tree_summarizer import TreeSummarizer
+    from summarizer.str_summarizers.flan_t5_base_samsum_summarizer import (
+        FlanT5BaseSamsumSummarizer,
+    )
+
+    return TreeSummarizer(FlanT5BaseSamsumSummarizer(**kwargs))
 
 
 class SummarizerFactory:
-    @staticmethod
-    def new(summarizer: str, **kwargs) -> JsonSummarizer:
-        match summarizer:
-            case "ChatGPT recursive":
-                return TreeSummarizer(ChatGPTSummarizer(**kwargs))
-            case "ChatGPT MapReduce":
-                return GPTMRSummarizer(**kwargs)
-            case "Identity":
-                return TreeSummarizer(IdentitySummarizer())
-            case "Flan T5 base samsum":
-                return TreeSummarizer(FlanT5BaseSamsumSummarizer(**kwargs))
-            case _:
-                raise ValueError("not supported type of summarizer")
+    SummarizerKeys = Literal[
+        "ChatGPT recursive", "ChatGPT MapReduce", "Identity", "Flan T5 base samsum"
+    ]
+
+    MAP: Dict[SummarizerKeys, Callable[..., JsonSummarizer]] = {
+        "ChatGPT recursive": lazy_build_chatgpt_recursive,
+        "ChatGPT MapReduce": lazy_build_chatgpt_mapreduce,
+        "Identity": lazy_build_identity,
+        "Flan T5 base samsum": lazy_build_flan_t5_base_samsum,
+    }
+
+    @classmethod
+    def new(
+        cls,
+        summarizer: SummarizerKeys,
+        **kwargs,
+    ) -> JsonSummarizer:
+        if summarizer in cls.MAP:
+            return cls.MAP[summarizer](**kwargs)
+        raise ValueError(
+            "%s is not supported. Please use one of the following summarizer: %s"
+            % (summarizer, ", ".join(cls.MAP.keys()))
+        )
 
 
 T = TypeVar("T", Dict[str, Any], List, str)

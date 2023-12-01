@@ -2,21 +2,25 @@ import json
 from typing import List, Tuple
 
 from textual.app import App, ComposeResult
-from textual.containers import Center, Horizontal, VerticalScroll
-from textual.widgets import Button, Label, ProgressBar, RadioSet, RadioButton, RichLog, Rule, TextArea
-from io_utils.abstract_io import AbstractIO
-from io_utils.discord_io import DiscordIO
-from io_utils.dummy_io import DummyIO
-from io_utils.instagram_io import InstagramIO
-from io_utils.telegram_io import TelegramIO
-from io_utils.text_file_io import TextFileIO
-from summarizer.str_summarizers.identity_summarizer import IdentitySummarizer
-from summarizer.str_summarizers.chatgpt_summarizer import ChatGPTSummarizer
-from summarizer.json_summarizers.tree_summarizer import TreeSummarizer
-from summarizer.json_summarizers.gpt_MR_summarizer import GPTMRSummarizer
+from textual.containers import Center, Horizontal, VerticalScroll, Container
+from textual.widgets import (
+    Button,
+    Label,
+    ProgressBar,
+    RadioSet,
+    RadioButton,
+    RichLog,
+    Rule,
+    TextArea,
+)
+
+from factories import IOFactory, SummarizerFactory, AppFactory
 
 from app import App as SummaryApp
 import nest_asyncio
+
+from io_utils.dummy_io import DummyIO
+
 nest_asyncio.apply()
 
 
@@ -35,18 +39,8 @@ tg_secrets = json.load(open("./secrets/tg_secrets.json", "r"))
 class SummarizerTUIApp(App[None]):
     def __init__(self):
         super().__init__()
-        self.platforms: List[Tuple[str, AbstractIO]] = [
-            ("Discord", DiscordIO(token, history_limit=30, src_channel_name="simulation")),
-            ("Instagram", InstagramIO()),
-            ("Telegram", TelegramIO(tg_secrets["api_id"], tg_secrets["api_hash"])),
-            ("Text File", TextFileIO("data/discord_history.txt")),
-        ]
-        self.summarizers = [
-            ("ChatGPT recursive", TreeSummarizer(ChatGPTSummarizer(api_key))),
-            ("ChatGPT MapReduce", GPTMRSummarizer(api_key, 3, True)),
-            ("Identity", TreeSummarizer(IdentitySummarizer())),
-            ("Flan T5 base samsum", TreeSummarizer(IdentitySummarizer())),  # for faster loading
-        ]
+        self.platforms = list(IOFactory.MAP.keys())
+        self.summarizers = list(SummarizerFactory.MAP.keys())
         self.platform_i = 0
         self.summarizer_i = 0
 
@@ -54,14 +48,19 @@ class SummarizerTUIApp(App[None]):
         with Horizontal():
             with VerticalScroll():
                 with Horizontal():
-                    with RadioSet(name="Platforms"):
-                        yield Label("Platform")
-                        for i, (label, _) in enumerate(self.platforms):
-                            yield RadioButton(label, value=i == self.platform_i)
-                    with RadioSet(name="Summarizers"):
-                        yield Label("Summarizer")
-                        for i, (label, _) in enumerate(self.summarizers):
-                            yield RadioButton(label, value=i == self.summarizer_i)
+                    with VerticalScroll():
+                        with RadioSet(name="Platforms"):
+                            yield Label("Platform")
+                            for i, name in enumerate(self.platforms):
+                                yield RadioButton(name, value=i == self.platform_i)
+                        # store platform-specifc settings
+                        yield Container(name="Settings", id="input_platform_settings")
+                    with VerticalScroll():
+                        with RadioSet(name="Summarizers"):
+                            yield Label("Summarizer")
+                            for i, name in enumerate(self.summarizers):
+                                yield RadioButton(name, value=i == self.summarizer_i)
+                        yield Container(name="Settings", id="summarizer_settings")
             yield Rule("vertical")
             with VerticalScroll():
                 area = RichLog(id="summary", wrap=True)
@@ -78,10 +77,12 @@ class SummarizerTUIApp(App[None]):
 
             _, platform_io = self.platforms[self.platform_i]
             _, summarizer = self.summarizers[self.summarizer_i]
-            app = SummaryApp(
-                platform_io,
-                summarizer,
-                DummyIO()
+            app = AppFactory.new(
+                {
+                    "input_io": platform_io,
+                    "summarizer": summarizer,
+                    "output_io": "Dummy",
+                }
             )
 
             area = self.query_one("#summary", RichLog)

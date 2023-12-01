@@ -6,15 +6,18 @@ from telethon.sessions.string import StringSession
 
 
 class TelegramIO(AbstractIO):
-    def __init__(self, api_id: int, api_hash: str) -> None:
+    def __init__(
+        self, api_id: int, api_hash: str, session_path: str = "./secrets/.session"
+    ) -> None:
         self.api_id = api_id
         self.api_hash = api_hash
-        self.client = TelegramClient("./secrets/.session", self.api_id, self.api_hash)
+        self.client = TelegramClient(session_path, self.api_id, self.api_hash)
 
     def get_history(self) -> Json:
         async def _get_history():
             async for dialog in self.client.iter_dialogs():
                 print(dialog.name, dialog.is_group)
+
         with self.client:
             self.client.loop.run_until_complete(_get_history())
         return {"group 0": ""}
