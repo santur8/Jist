@@ -44,12 +44,24 @@ with open("./secrets/openai_api_key", "r") as f:
 tg_secrets = json.load(open("./secrets/tg_secrets.json", "r"))
 
 
-class BuildConfig(Protocol):
+class BuildConfigWidget(Widget):
+    def __init__(
+        self,
+        *children: Widget,
+        name: str | None = None,
+        id: str | None = None,
+        classes: str | None = None,
+        disabled: bool = False,
+    ) -> None:
+        super().__init__(
+            *children, name=name, id=id, classes=classes, disabled=disabled
+        )
+
     def build_config(self) -> Json:
-        ...
+        raise NotImplementedError
 
 
-class DiscordSettings(Widget):
+class DiscordSettings(BuildConfigWidget):
     def __init__(self, token: str) -> None:
         super().__init__()
         self.token = token
@@ -143,7 +155,7 @@ class DiscordSettings(Widget):
         }
 
 
-class DummySettings(Widget):
+class DummySettings(BuildConfigWidget):
     def __init__(self) -> None:
         super().__init__()
 
@@ -156,7 +168,7 @@ class DummySettings(Widget):
 
 class IOSettingsFactory:
     @staticmethod
-    def new(io: IOFactory.IOKeys) -> Widget:
+    def new(io: IOFactory.IOKeys) -> BuildConfigWidget:
         match io:
             case "Discord":
                 return DiscordSettings(token)
@@ -173,12 +185,14 @@ class IOSettingsFactory:
 class SummarizerTUIApp(App[None]):
     def __init__(self):
         super().__init__()
-        self.platforms: List[str] = list(IOFactory.MAP.keys())
-        self.summarizers: List[str] = list(SummarizerFactory.MAP.keys())
+        self.platforms: List[IOFactory.IOKeys] = list(IOFactory.MAP.keys())
+        self.summarizers: List[SummarizerFactory.SummarizerKeys] = list(
+            SummarizerFactory.MAP.keys()
+        )
         self.platform_i = 0
         self.summarizer_i = 0
 
-        self.platform_config: Optional[BuildConfig] = None
+        self.platform_config: Optional[BuildConfigWidget] = None
 
     def compose(self) -> ComposeResult:
         with Horizontal():
