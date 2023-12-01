@@ -32,13 +32,19 @@ class DiscordIO(AbstractIO):
         async def on_ready():
             for guild in bot.guilds:
                 for channel in guild.text_channels:
-                    if self.src_channel_name is not None and channel.name != self.src_channel_name:
+                    if (
+                        self.src_channel_name is not None
+                        and channel.name != self.src_channel_name
+                    ):
                         # if source channel defined, ignore all others
                         continue
                     history.setdefault(guild.name, dict())[channel.name] = [
-                        "%s: %s" % (message.author.name, message.content) async for message in channel.history(limit=self.history_limit)
+                        "%s: %s" % (message.author.name, message.content)
+                        async for message in channel.history(limit=self.history_limit)
                     ]
-                    history[guild.name][channel.name].reverse()  # the history is fetched in reverse order, thus reverse back to make it normal
+                    history[guild.name][
+                        channel.name
+                    ].reverse()  # the history is fetched in reverse order, thus reverse back to make it normal
             await bot.close()
 
         bot.run(self.token)
@@ -51,20 +57,25 @@ class DiscordIO(AbstractIO):
                 return Err("No target channel was provided")
             case val:
                 bot = discord.Client(intents=self.intents)
+
                 @bot.event
                 async def on_ready():
                     nonlocal res
+
                     async def wrapper():
                         channel = bot.get_channel(val)
                         match channel:
                             case ForumChannel() | PrivateChannel() | CategoryChannel():
-                                return Err(f"Cannot send message in {channel.__class__}")
+                                return Err(
+                                    f"Cannot send message in {channel.__class__}"
+                                )
                             case None:
                                 return Err("The provided channel id is invalid")
                             case _:
                                 return Ok(await channel.send(summary))
+
                     res = await wrapper()
                     await bot.close()
+
                 bot.run(self.token)
         return res
-
