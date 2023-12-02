@@ -3,7 +3,8 @@
     "name": "Discord",
     "args": {
       "token": "file:secrets/discord_token",
-      "history_limit": 5
+      "history_limit": 5,
+      "src_channel_name": "simulation"
     }
   },
   "summarizer": {

@@ -8,7 +8,6 @@ from summarizer.json_summarizers.json_summarizer import JsonSummarizer, Json
 
 def lazy_build_discord_io(**kwargs) -> AbstractIO:
     from io_utils.discord_io import DiscordIO
-
     return DiscordIO(**kwargs)
 
 
@@ -122,6 +121,8 @@ class AppFactory:
                 if obj.startswith("file:"):
                     with open(obj[len("file:") :], "r") as f:
                         return f.read()
+                return obj
+            case int():
                 return obj
 
     @classmethod

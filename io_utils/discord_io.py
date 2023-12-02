@@ -13,7 +13,7 @@ class DiscordIO(AbstractIO):
     def __init__(
         self,
         token: str,
-        history_limit=100,
+        history_limit: int = 100,
         src_channel_name: Optional[str] = None,
         send_to: Optional[int] = None,
     ) -> None:
@@ -21,6 +21,7 @@ class DiscordIO(AbstractIO):
         self.send_to = send_to
         self.token = token
         self.src_channel_name = src_channel_name
+
 
     def get_history(self) -> Json:
         # https://discordpy.readthedocs.io/en/stable/ext/commands/api.html#discord.ext.commands.Context.history
