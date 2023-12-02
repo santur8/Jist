@@ -5,6 +5,7 @@ import concurrent.futures
 import tiktoken
 from datetime import datetime
 import queue
+from loguru import logger
 
 TOKEN_LIMIT = 4096-50  # token limit for GPT 3.5 Turbo, minus some room for prompt
 
@@ -17,6 +18,7 @@ class GPTMRSummarizer(JsonSummarizer):
         self.map_count = map_count
         self.sum_reduce = sum_reduce
         self.encoding = tiktoken.encoding_for_model('gpt-3.5-turbo')
+        logger.info('initialized openai client')
 
     def summarize(self, history: Json, split: Literal['count'] | Literal['token'] = 'token') -> str:
         '''
@@ -38,15 +40,15 @@ class GPTMRSummarizer(JsonSummarizer):
             }, ...
         }
         '''
-        print(self.map_count)
         summary = ''
         for server in history.keys():
             for channel in history[server].keys():
+                logger.info(f'map phase for {server}: {channel}')
                 self.parse_history(history[server][channel], split='token')
                 self.map_summarize()
-                print(f'map results: {map_results}')
                 reduce_results = server + ': ' + channel + ':\n'
                 if self.sum_reduce:
+                    logger.info(f'reduce phase for {server}: {channel}')
                     reduce_results += self.reduce()
                 else:
                     for res in map_results:
@@ -138,7 +140,7 @@ class GPTMRSummarizer(JsonSummarizer):
             try:
                 assert future.done()
             except Exception as e:
-                print(f'Error for future: {e}')
+                logger.error(f'Error for future: {e}')
 
         return
 
@@ -153,7 +155,7 @@ class GPTMRSummarizer(JsonSummarizer):
                 idx = tup[0]
                 chat_segment = tup[1]
 
-                print(str(idx) + ' thread summarizing ' + str(idx) + ' : ' + str(datetime.now()))
+                logger.info(f'summarizing chunk {idx}')
                 completion = self.client.chat.completions.create(
                     model='gpt-3.5-turbo',
                     messages=[
@@ -161,7 +163,7 @@ class GPTMRSummarizer(JsonSummarizer):
                         {'role': 'user', 'content': str(chat_segment)}
                     ]
                 )
-                print(str(idx) + ' thread finished ' + str(datetime.now()))
+                logger.info(f'chunk {idx} finished')
                 assert completion.choices[0].message.content is not None
                 map_results[idx] = completion.choices[0].message.content
             except queue.Empty:
