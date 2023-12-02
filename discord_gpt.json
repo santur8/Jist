@@ -1,0 +1,20 @@
+{
+    "input_io": {
+      "name": "Discord",
+      "args": {
+        "token": "file:secrets/discord_token",
+        "history_limit": 5,
+        "src_channel_name": "simulation"
+      }
+    },
+    "summarizer": {
+      "name": "ChatGPT recursive",
+      "args": {
+        "api_key": "file:secrets/openai_api_key"
+      }
+    },
+    "output_io": {
+      "name": "Dummy",
+      "args": {}
+    }
+  }

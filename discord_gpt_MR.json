@@ -1,0 +1,22 @@
+{
+  "input_io": {
+    "name": "Discord",
+    "args": {
+      "token": "file:secrets/discord_token",
+      "history_limit": 100,
+      "src_channel_name": "simulation"
+    }
+  },
+  "summarizer": {
+    "name": "ChatGPT MapReduce",
+    "args": {
+      "api_key": "file:secrets/openai_api_key",
+      "map_count": 10,
+      "sum_reduce": true
+    }
+  },
+  "output_io": {
+    "name": "Dummy",
+    "args": {}
+  }
+}
