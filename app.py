@@ -1,5 +1,5 @@
 from typing import TypeVar
-from result import Result
+from result import Result, Ok
 from io_utils.abstract_io import AbstractIO
 from summarizer.json_summarizers.json_summarizer import JsonSummarizer
 
@@ -19,6 +19,11 @@ class App:
         self.summarizer = summarizer
 
     def execute(self) -> Result[T, str]:
-        return self.output_io.send(
+        res = self.output_io.send(
             self.summarizer.summarize(self.input_io.get_history())
         )
+        if isinstance(res, Ok):
+            # prettier printing of result
+            return res.value
+        return res
+
