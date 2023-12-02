@@ -4,50 +4,61 @@ from openai import OpenAI
 import concurrent.futures
 import tiktoken
 from datetime import datetime
+import queue
 
 TOKEN_LIMIT = 4096-50  # token limit for GPT 3.5 Turbo, minus some room for prompt
+
+summary_queue = queue.Queue(maxsize=10)
+map_results = [''] * 10
 
 class GPTMRSummarizer(JsonSummarizer):
     def __init__(self, api_key: str, map_count: int, sum_reduce: bool = False) -> None:
         self.client = OpenAI(api_key=api_key)
         self.map_count = map_count
         self.sum_reduce = sum_reduce
-        self.encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        self.encoding = tiktoken.encoding_for_model('gpt-3.5-turbo')
 
-    def summarize(self, history: Json, split: Literal["count"] | Literal["token"] = 'count') -> str:
+    def summarize(self, history: Json, split: Literal['count'] | Literal['token'] = 'token') -> str:
         '''
         Summarize using MapReduce programming model
         Map splits up text and makes concurrent API calls
         Reduce collates results and (optionally) combines with a final summarization
+        Assumes the following JSON input format:
+            dictionary of servers
+                containing dictionary of channels 
+                    containing list of messages
+        { 
+            server1: {
+                channel1: {
+                    ['user1: message1', 'user2: message2', 'user1: message3', ...]
+                },
+                channel2: {
+                    ['user1: message1', 'user2: message2', 'user1: message3', ...]
+                }, ...
+            }, ...
+        }
         '''
-
-        #chat_lists = self.parse_history(history, split)
-        chat_lists = self.parse_history(history, 'token')
-        for item in chat_lists:
-            print(item)
-            print(len(self.encoding.encode(item)))
-            print()
-
-        print(len(chat_lists))
-        map_results = self.map_summarize(chat_lists)
-
-        if self.sum_reduce:
-            return self.reduce(map_results)
-        else:
-            # return map results as single string?
-            return ''
+        print(self.map_count)
+        summary = ''
+        for server in history.keys():
+            for channel in history[server].keys():
+                self.parse_history(history[server][channel], split='token')
+                self.map_summarize()
+                print(f'map results: {map_results}')
+                reduce_results = server + ': ' + channel + ':\n'
+                if self.sum_reduce:
+                    reduce_results += self.reduce()
+                else:
+                    for res in map_results:
+                        reduce_results += res + '\n'
+                summary += reduce_results + '\n'
+        
+        return summary
     
-    def parse_history(self, history: Json, split: Literal['count'] | Literal['token']) -> list:
+    def parse_history(self, messages: list, split: Literal['count'] | Literal['token']):
         '''
-        Split list of comments into equal portions for parallel summarization
+        Split list of chats into equal portions for parallel summarization
         '''
-
-        # extremely jank rn, will not work with more than one bot guild or channel in history dict
-        # TODO get server and channel name from somewhere
-        # get list of tuples (user, message)
-        serv = list(history.keys())[0]
-        chan = list(history[serv].keys())[0]
-        messages = history[serv][chan]
 
         # split up messages into equal groups
         if split == 'count':
@@ -66,11 +77,6 @@ class GPTMRSummarizer(JsonSummarizer):
 
                 # get slice of chat messages
                 chunk = messages[start:start + list_size]
-                # for tup in chunk:
-                #     # cat user (tup[0]) and message (tup[1]) together
-                #     msg = tup[0] + ': ' + tup[1]
-                #     chats.append(msg)
-
                 chat_lists.append(chunk)
 
                 # increment starting position
@@ -98,7 +104,6 @@ class GPTMRSummarizer(JsonSummarizer):
                     # current chunk of maximum size
                     # append current chunk to list
                     chat_list.append(chunk)
-                    print(chunk)
                     chunk = ''
                     chunk_size = TOKEN_LIMIT
                     
@@ -106,53 +111,64 @@ class GPTMRSummarizer(JsonSummarizer):
                     chunk += message
                     chunk += ', '
                     chunk_size -= token_count
+
             
             # final append for last chunk
             chat_list.append(chunk)
-            return chat_list
-        
-        # should never hit this
-        return []
+
+            if len(chat_list) >= 10:
+                return
+
+            for i in range(0, len(chat_list)):
+                tup = (i, chat_list[i])
+                summary_queue.put_nowait(tup)
+
+        return
     
-    def map_summarize(self, chat_lists: list) -> list:
+    def map_summarize(self):
         '''
         Perform parallel summarization over groups of messages
         '''
-        summaries = ['' for _ in range(self.map_count)]
-
         # create concurrent threads to execute
         with concurrent.futures.ThreadPoolExecutor() as tp:
-            future_prompt = {tp.submit(self.thread_summarize, chat_lists[i], i): i for i in range(len(chat_lists)) }
+            future_prompt = {tp.submit(self.thread_summarize) for _ in range(self.map_count) }
         
         # wait for all threads to complete
         for future in concurrent.futures.as_completed(future_prompt):
-            thread_index = future_prompt[future]
             try:
-                summary = future.result()
-                summaries[thread_index] = summary
+                assert future.done()
             except Exception as e:
-                print(f'Error for index {thread_index}: {e}')
+                print(f'Error for future: {e}')
 
-        return summaries
+        return
 
-    def thread_summarize(self, chat_segment: list, idx: int) -> str:
+    def thread_summarize(self) -> (int, str):
         '''
         Summarize a single chat segment
         '''
-        prompt = 'Summarize the key points and highlights from the chat logs into a single sentence'
-        print(str(idx) + ' thread starting ' + str(datetime.now()))
-        completion = self.client.chat.completions.create(
-            model='gpt-3.5-turbo',
-            messages=[
-                {'role': 'system', 'content': prompt},
-                {'role': 'user', 'content': str(chat_segment)}
-            ]
-        )
-        print(str(idx) + ' thread finished ' + str(datetime.now()))
-        assert completion.choices[0].message.content is not None
-        return completion.choices[0].message.content
+        prompt = 'Summarize the key points and highlights from the chat logs into a single, concise sentence:'
+        while True:
+            try:
+                tup = summary_queue.get_nowait()
+                idx = tup[0]
+                chat_segment = tup[1]
 
-    def reduce(self, map_results: list) -> str:
+                print(str(idx) + ' thread summarizing ' + str(idx) + ' : ' + str(datetime.now()))
+                completion = self.client.chat.completions.create(
+                    model='gpt-3.5-turbo',
+                    messages=[
+                        {'role': 'system', 'content': prompt},
+                        {'role': 'user', 'content': str(chat_segment)}
+                    ]
+                )
+                print(str(idx) + ' thread finished ' + str(datetime.now()))
+                assert completion.choices[0].message.content is not None
+                map_results[idx] = completion.choices[0].message.content
+            except queue.Empty:
+                break  # Queue is empty, exit the loop
+        return
+
+    def reduce(self) -> str:
         '''
         Given results from parallel map summaries, collate into single result
         '''
